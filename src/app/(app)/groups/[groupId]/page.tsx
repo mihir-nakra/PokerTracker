@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { LeaderboardTable } from "@/components/groups/leaderboard-table";
+import { GroupStatsTabs } from "@/components/groups/group-stats-tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Play, Settings, Calendar, ArrowRight, Trophy } from "lucide-react";
@@ -72,6 +72,37 @@ export default async function GroupPage({
 
   const finalizedCount = sessions?.filter((s) => s.status === "finalized").length ?? 0;
 
+  // Fetch entries for winnings-over-time chart (all players, finalized sessions only)
+  const { data: allEntries } = await supabase
+    .from("entries")
+    .select("user_id, net, sessions(date, status)")
+    .eq("sessions.group_id", groupId)
+    .order("created_at", { ascending: true });
+
+  // Build per-player cumulative series
+  const playerMap = new Map<string, { date: string; net: number }[]>();
+  for (const entry of allEntries ?? []) {
+    const session = entry.sessions as unknown as { date: string; status: string } | null;
+    if (session?.status !== "finalized") continue;
+    if (!playerMap.has(entry.user_id)) playerMap.set(entry.user_id, []);
+    playerMap.get(entry.user_id)!.push({ date: session.date, net: Number(entry.net) });
+  }
+
+  const chartPlayers = Array.from(playerMap.entries()).map(([userId, entries]) => {
+    const sorted = entries.sort((a, b) => a.date.localeCompare(b.date));
+    let cumulative = 0;
+    const data = sorted.map((e) => {
+      cumulative += e.net;
+      return { date: e.date, cumulative: Math.round(cumulative * 100) / 100 };
+    });
+    const lb = leaderboard?.find((l) => l.user_id === userId);
+    return {
+      userId,
+      displayName: lb?.display_name ?? "Unknown",
+      data,
+    };
+  });
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -99,26 +130,15 @@ export default async function GroupPage({
         </div>
       </div>
 
-      {/* Leaderboard */}
+      {/* Leaderboard & Stats */}
       <section>
-        <div className="flex items-center gap-2 mb-4">
-          <Trophy className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">Leaderboard</h2>
-        </div>
-        {leaderboard && leaderboard.length > 0 ? (
-          <Card>
-            <CardContent className="p-0">
-              <LeaderboardTable rows={leaderboard} groupId={groupId} placeholderIds={placeholderIds} />
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              <Trophy className="h-8 w-8 mx-auto mb-2 opacity-30" />
-              <p>No finalized sessions yet. Start a game to see the leaderboard.</p>
-            </CardContent>
-          </Card>
-        )}
+        <GroupStatsTabs
+          leaderboard={leaderboard ?? []}
+          groupId={groupId}
+          placeholderIds={placeholderIds}
+          chartPlayers={chartPlayers}
+          currentUserId={user!.id}
+        />
       </section>
 
       {/* Recent Sessions */}
