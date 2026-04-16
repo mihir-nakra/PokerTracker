@@ -185,14 +185,21 @@ export async function claimPlaceholderPlayer(groupId: string, placeholderId: str
     .eq("user_id", placeholderId);
 
   // Delete placeholder's membership (real user already has one)
-  await supabase
+  const { error: membershipError } = await supabase
     .from("memberships")
     .delete()
     .eq("user_id", placeholderId)
     .eq("group_id", groupId);
 
+  if (membershipError) return { error: "Failed to remove placeholder membership" };
+
   // Delete placeholder profile
-  await supabase.from("profiles").delete().eq("id", placeholderId);
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .delete()
+    .eq("id", placeholderId);
+
+  if (profileError) return { error: "Failed to remove placeholder profile" };
 
   revalidatePath(`/groups/${groupId}`);
   revalidatePath(`/groups/${groupId}/settings`);
