@@ -62,8 +62,7 @@ export default async function GroupPage({
     .from("sessions")
     .select("*")
     .eq("group_id", groupId)
-    .order("date", { ascending: false })
-    .limit(10);
+    .order("date", { ascending: false });
 
   // Member count
   const { count: memberCount } = await supabase
