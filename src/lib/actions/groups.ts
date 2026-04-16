@@ -83,7 +83,7 @@ export async function joinGroup(inviteCode: string) {
 
   if (error) return { error: error.message };
 
-  redirect(`/groups/${group.id}`);
+  return { groupId: group.id };
 }
 
 export async function updateGroup(groupId: string, formData: FormData) {

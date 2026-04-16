@@ -89,11 +89,16 @@ export default async function InvitePage({
 
   const hasPlaceholders = placeholders && placeholders.length > 0;
 
+  const groupId = group.id;
+
   async function handleJoin() {
     "use server";
-    await joinGroup(inviteCode);
+    const result = await joinGroup(inviteCode);
+    if (result?.error) return;
     if (hasPlaceholders) {
       redirect(`/invite/${inviteCode}/claim`);
+    } else {
+      redirect(`/groups/${groupId}`);
     }
   }
 
