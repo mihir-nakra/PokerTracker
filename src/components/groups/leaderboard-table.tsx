@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { Trophy } from "lucide-react";
 
 interface LeaderboardRow {
   user_id: string;
@@ -30,10 +31,10 @@ export function LeaderboardTable({ rows, groupId, placeholderIds }: LeaderboardT
   return (
     <Table>
       <TableHeader>
-        <TableRow>
-          <TableHead className="w-12">#</TableHead>
+        <TableRow className="hover:bg-transparent">
+          <TableHead className="w-14 text-center">#</TableHead>
           <TableHead>Player</TableHead>
-          <TableHead className="text-right">Total Net</TableHead>
+          <TableHead className="text-right">Net Result</TableHead>
           <TableHead className="text-right hidden sm:table-cell">Sessions</TableHead>
           <TableHead className="text-right hidden sm:table-cell">Avg/Session</TableHead>
         </TableRow>
@@ -47,19 +48,37 @@ export function LeaderboardTable({ rows, groupId, placeholderIds }: LeaderboardT
             .toUpperCase()
             .slice(0, 2);
 
+          const isTop3 = i < 3;
+
           return (
-            <TableRow key={row.user_id}>
-              <TableCell className="font-medium">{i + 1}</TableCell>
+            <TableRow key={row.user_id} className="group">
+              <TableCell className="text-center">
+                {isTop3 ? (
+                  <div className={cn(
+                    "inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold",
+                    i === 0 && "bg-amber-500/15 text-amber-600",
+                    i === 1 && "bg-muted text-muted-foreground",
+                    i === 2 && "bg-amber-600/10 text-amber-700"
+                  )}>
+                    {i === 0 ? <Trophy className="h-3.5 w-3.5" /> : i + 1}
+                  </div>
+                ) : (
+                  <span className="text-sm text-muted-foreground">{i + 1}</span>
+                )}
+              </TableCell>
               <TableCell>
                 <Link
                   href={`/groups/${groupId}/players/${row.user_id}`}
-                  className="flex items-center gap-2 hover:underline"
+                  className="flex items-center gap-2.5 hover:underline"
                 >
-                  <Avatar className="h-7 w-7">
+                  <Avatar className={cn(
+                    "h-8 w-8",
+                    i === 0 && "ring-2 ring-amber-500/30"
+                  )}>
                     <AvatarImage src={row.avatar_url ?? undefined} />
-                    <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+                    <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">{initials}</AvatarFallback>
                   </Avatar>
-                  {row.display_name ?? "Unknown"}
+                  <span className="font-medium">{row.display_name ?? "Unknown"}</span>
                   {placeholderIds?.has(row.user_id) && (
                     <Badge variant="outline" className="text-xs text-muted-foreground">
                       Unclaimed
@@ -69,17 +88,21 @@ export function LeaderboardTable({ rows, groupId, placeholderIds }: LeaderboardT
               </TableCell>
               <TableCell
                 className={cn(
-                  "text-right font-medium",
-                  row.total_net > 0 && "text-green-600",
-                  row.total_net < 0 && "text-red-600"
+                  "text-right font-semibold tabular-nums",
+                  row.total_net > 0 && "text-emerald-600",
+                  row.total_net < 0 && "text-red-500"
                 )}
               >
                 {row.total_net >= 0 ? "+" : ""}${Number(row.total_net).toFixed(2)}
               </TableCell>
-              <TableCell className="text-right hidden sm:table-cell">
+              <TableCell className="text-right hidden sm:table-cell text-muted-foreground">
                 {row.sessions_played}
               </TableCell>
-              <TableCell className="text-right hidden sm:table-cell">
+              <TableCell className={cn(
+                "text-right hidden sm:table-cell tabular-nums",
+                row.avg_net > 0 && "text-emerald-600",
+                row.avg_net < 0 && "text-red-500"
+              )}>
                 ${Number(row.avg_net).toFixed(2)}
               </TableCell>
             </TableRow>

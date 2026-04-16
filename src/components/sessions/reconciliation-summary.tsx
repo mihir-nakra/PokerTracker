@@ -30,7 +30,7 @@ export function ReconciliationSummary({
         <span
           className={cn(
             "font-semibold",
-            isBalanced ? "text-green-600" : "text-red-600"
+            isBalanced ? "text-emerald-600" : "text-red-500"
           )}
         >
           {isBalanced ? "Balanced" : `Off by $${Math.abs(difference).toFixed(2)}`}

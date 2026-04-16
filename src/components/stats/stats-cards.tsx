@@ -24,23 +24,23 @@ export function StatsCards({
     {
       label: "Total Net",
       value: formatDollars(totalNet),
-      color: totalNet >= 0 ? "text-green-600" : "text-red-600",
+      color: totalNet >= 0 ? "text-emerald-600" : "text-red-500",
     },
     { label: "Sessions Played", value: sessionsPlayed.toString(), color: "" },
     {
       label: "Avg / Session",
       value: formatDollars(avgNet),
-      color: avgNet >= 0 ? "text-green-600" : "text-red-600",
+      color: avgNet >= 0 ? "text-emerald-600" : "text-red-500",
     },
     {
       label: "Best Session",
       value: formatDollars(bestSession),
-      color: "text-green-600",
+      color: "text-emerald-600",
     },
     {
       label: "Worst Session",
       value: formatDollars(worstSession),
-      color: "text-red-600",
+      color: "text-red-500",
     },
   ];
 

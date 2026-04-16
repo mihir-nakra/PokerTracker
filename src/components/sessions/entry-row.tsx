@@ -59,11 +59,11 @@ export function EntryRow({ entry, groupId, sessionId, canEdit }: EntryRowProps) 
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px_120px_100px] gap-2 p-3 border-b last:border-b-0 items-center">
-      <div className="flex items-center gap-2">
-        <Avatar className="h-7 w-7">
+    <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px_120px_100px] gap-2 px-4 py-3 border-b last:border-b-0 items-center hover:bg-muted/20 transition-colors">
+      <div className="flex items-center gap-2.5">
+        <Avatar className="h-8 w-8">
           <AvatarImage src={entry.avatarUrl ?? undefined} />
-          <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+          <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">{initials}</AvatarFallback>
         </Avatar>
         <span className="font-medium text-sm">{entry.displayName}</span>
         {entry.isPlaceholder && (
@@ -86,11 +86,11 @@ export function EntryRow({ entry, groupId, sessionId, canEdit }: EntryRowProps) 
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSave("total_buy_in", buyIn);
             }}
-            className="w-24 text-right h-8"
+            className="w-24 text-right h-8 tabular-nums"
             disabled={saving}
           />
         ) : (
-          <span className="text-sm text-right">${entry.totalBuyIn.toFixed(2)}</span>
+          <span className="text-sm text-right tabular-nums">${entry.totalBuyIn.toFixed(2)}</span>
         )}
       </div>
 
@@ -107,11 +107,11 @@ export function EntryRow({ entry, groupId, sessionId, canEdit }: EntryRowProps) 
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSave("cash_out", cashOut);
             }}
-            className="w-24 text-right h-8"
+            className="w-24 text-right h-8 tabular-nums"
             disabled={saving}
           />
         ) : (
-          <span className="text-sm text-right">${entry.cashOut.toFixed(2)}</span>
+          <span className="text-sm text-right tabular-nums">${entry.cashOut.toFixed(2)}</span>
         )}
       </div>
 
@@ -119,9 +119,9 @@ export function EntryRow({ entry, groupId, sessionId, canEdit }: EntryRowProps) 
         <span className="sm:hidden text-xs text-muted-foreground w-16">Net:</span>
         <span
           className={cn(
-            "text-sm font-medium text-right",
-            localNet > 0 && "text-green-600",
-            localNet < 0 && "text-red-600"
+            "text-sm font-semibold text-right tabular-nums",
+            localNet > 0 && "text-emerald-600",
+            localNet < 0 && "text-red-500"
           )}
         >
           {localNet >= 0 ? "+" : ""}${localNet.toFixed(2)}

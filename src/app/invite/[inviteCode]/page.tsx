@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
+import { Users, UserPlus } from "lucide-react";
 
 export default async function InvitePage({
   params,
@@ -28,7 +29,15 @@ export default async function InvitePage({
 
   if (!group) {
     return (
-      <div className="flex min-h-screen items-center justify-center px-4">
+      <div className="flex min-h-screen flex-col items-center justify-center px-4">
+        <div className="mb-8">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <span className="text-sm font-bold">PT</span>
+            </div>
+            <span className="text-xl font-bold tracking-tight">PokerTracker</span>
+          </div>
+        </div>
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle>Invalid Invite</CardTitle>
@@ -50,12 +59,10 @@ export default async function InvitePage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Not logged in — redirect to login with redirect back here
   if (!user) {
     redirect(`/login?redirect=/invite/${inviteCode}`);
   }
 
-  // Check if already a member
   const { data: existing } = await supabase
     .from("memberships")
     .select("id")
@@ -67,7 +74,13 @@ export default async function InvitePage({
     redirect(`/groups/${group.id}`);
   }
 
-  // Check if there are unclaimed placeholders
+  // Get member count
+  const { count: memberCount } = await supabase
+    .from("memberships")
+    .select("id", { count: "exact", head: true })
+    .eq("group_id", group.id);
+
+  // Check for unclaimed placeholders
   const { data: placeholders } = await supabase
     .from("profiles")
     .select("id")
@@ -76,7 +89,6 @@ export default async function InvitePage({
 
   const hasPlaceholders = placeholders && placeholders.length > 0;
 
-  // Show join prompt
   async function handleJoin() {
     "use server";
     await joinGroup(inviteCode);
@@ -86,17 +98,40 @@ export default async function InvitePage({
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4">
+      <div className="mb-8">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <span className="text-sm font-bold">PT</span>
+          </div>
+          <span className="text-xl font-bold tracking-tight">PokerTracker</span>
+        </div>
+      </div>
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle>Join {group.name}?</CardTitle>
+        <CardHeader className="text-center space-y-4">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+            <UserPlus className="h-7 w-7 text-primary" />
+          </div>
+          <div>
+            <CardTitle className="text-xl">You&apos;re invited to join</CardTitle>
+            <p className="text-2xl font-bold text-primary mt-1">{group.name}</p>
+          </div>
           <CardDescription>
-            You&apos;ve been invited to join this poker group.
+            You&apos;ve been sent a seat at the table.
           </CardDescription>
         </CardHeader>
-        <CardContent className="text-center">
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-center gap-6 rounded-lg border p-4">
+            <div className="text-center">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Members</p>
+              <p className="flex items-center gap-1.5 mt-1 font-semibold">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                {memberCount ?? 0} Active
+              </p>
+            </div>
+          </div>
           <form action={handleJoin}>
-            <Button type="submit" size="lg">
+            <Button type="submit" size="lg" className="w-full">
               Join Group
             </Button>
           </form>

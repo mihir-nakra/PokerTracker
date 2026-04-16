@@ -66,7 +66,7 @@ export function ClaimPlayerUI({ placeholders, groupId, groupName }: ClaimPlayerU
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Total net</span>
-              <span className={`font-medium ${confirming.totalNet >= 0 ? "text-green-600" : "text-red-600"}`}>
+              <span className={`font-medium ${confirming.totalNet >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                 {confirming.totalNet >= 0 ? "+" : ""}${confirming.totalNet.toFixed(2)}
               </span>
             </div>
