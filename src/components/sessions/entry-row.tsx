@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { updateEntry } from "@/lib/actions/entries";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -14,6 +15,7 @@ interface EntryRowProps {
     userId: string;
     displayName: string;
     avatarUrl: string | null;
+    isPlaceholder: boolean;
     totalBuyIn: number;
     cashOut: number;
     net: number;
@@ -64,6 +66,11 @@ export function EntryRow({ entry, groupId, sessionId, canEdit }: EntryRowProps) 
           <AvatarFallback className="text-xs">{initials}</AvatarFallback>
         </Avatar>
         <span className="font-medium text-sm">{entry.displayName}</span>
+        {entry.isPlaceholder && (
+          <Badge variant="outline" className="text-xs text-muted-foreground">
+            Unclaimed
+          </Badge>
+        )}
       </div>
 
       <div className="flex items-center gap-1 sm:justify-end">

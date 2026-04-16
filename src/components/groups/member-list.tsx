@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { removeMember, updateMemberRole } from "@/lib/actions/groups";
+import { deletePlaceholderPlayer } from "@/lib/actions/players";
 import { toast } from "sonner";
 
 interface Member {
@@ -18,6 +19,7 @@ interface Member {
   role: string;
   displayName: string;
   avatarUrl: string | null;
+  isPlaceholder: boolean;
 }
 
 interface MemberListProps {
@@ -53,6 +55,16 @@ export function MemberList({
     }
   }
 
+  async function handleDeletePlaceholder(userId: string) {
+    if (!confirm("Delete this placeholder player? This will remove all their session data.")) return;
+    const result = await deletePlaceholderPlayer(userId, groupId);
+    if (result?.error) {
+      toast.error(result.error);
+    } else {
+      toast.success("Player removed");
+    }
+  }
+
   return (
     <div className="space-y-3">
       {members.map((member) => {
@@ -77,6 +89,11 @@ export function MemberList({
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
               <span className="font-medium">{member.displayName}</span>
+              {member.isPlaceholder && (
+                <Badge variant="outline" className="text-xs text-muted-foreground">
+                  Unclaimed
+                </Badge>
+              )}
               {isSelf && (
                 <Badge variant="outline" className="text-xs">
                   You
@@ -86,26 +103,39 @@ export function MemberList({
             <div className="flex items-center gap-2">
               {canManage && !isOwner && !isSelf ? (
                 <>
-                  <Select
-                    defaultValue={member.role}
-                    onValueChange={(v) => v && handleRoleChange(member.userId, String(v))}
-                  >
-                    <SelectTrigger className="w-28">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">admin</SelectItem>
-                      <SelectItem value="member">member</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive"
-                    onClick={() => handleRemove(member.userId)}
-                  >
-                    Remove
-                  </Button>
+                  {member.isPlaceholder ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive"
+                      onClick={() => handleDeletePlaceholder(member.userId)}
+                    >
+                      Delete
+                    </Button>
+                  ) : (
+                    <>
+                      <Select
+                        defaultValue={member.role}
+                        onValueChange={(v) => v && handleRoleChange(member.userId, String(v))}
+                      >
+                        <SelectTrigger className="w-28">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">admin</SelectItem>
+                          <SelectItem value="member">member</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive"
+                        onClick={() => handleRemove(member.userId)}
+                      >
+                        Remove
+                      </Button>
+                    </>
+                  )}
                 </>
               ) : (
                 <Badge variant="secondary">{member.role}</Badge>

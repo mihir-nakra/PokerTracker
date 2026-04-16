@@ -29,7 +29,7 @@ export default async function NewSessionPage({
   // Get group members
   const { data: memberships } = await supabase
     .from("memberships")
-    .select("user_id, profiles(id, display_name)")
+    .select("user_id, profiles(id, display_name, is_placeholder)")
     .eq("group_id", groupId);
 
   const players =
@@ -37,6 +37,8 @@ export default async function NewSessionPage({
       id: m.user_id,
       displayName:
         (m.profiles as unknown as { display_name: string | null })?.display_name ?? "Unknown",
+      isPlaceholder:
+        (m.profiles as unknown as { is_placeholder: boolean })?.is_placeholder ?? false,
     })) ?? [];
 
   // Get the most recent session's players for "Same as last session"

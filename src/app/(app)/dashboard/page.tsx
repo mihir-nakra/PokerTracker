@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { GroupCard } from "@/components/groups/group-card";
+import { SignOutButton } from "./sign-out-button";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -24,9 +25,12 @@ export default async function DashboardPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Your Groups</h1>
-        <Button nativeButton={false} render={<Link href="/groups/new" />}>
-          Create Group
-        </Button>
+        <div className="flex gap-2">
+          <Button nativeButton={false} className="min-h-11 sm:min-h-9" render={<Link href="/groups/new" />}>
+            Create Group
+          </Button>
+          <SignOutButton />
+        </div>
       </div>
       {groups.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">

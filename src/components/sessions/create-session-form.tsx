@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface CreateSessionFormProps {
   groupId: string;
-  players: { id: string; displayName: string }[];
+  players: { id: string; displayName: string; isPlaceholder: boolean }[];
   lastSessionPlayerIds: string[];
 }
 
@@ -117,6 +118,11 @@ export function CreateSessionForm({
                     className="h-4 w-4"
                   />
                   <span>{player.displayName}</span>
+                  {player.isPlaceholder && (
+                    <Badge variant="outline" className="text-xs text-muted-foreground">
+                      Unclaimed
+                    </Badge>
+                  )}
                 </label>
               ))}
             </div>

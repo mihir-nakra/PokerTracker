@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -22,9 +23,10 @@ interface LeaderboardRow {
 interface LeaderboardTableProps {
   rows: LeaderboardRow[];
   groupId: string;
+  placeholderIds?: Set<string>;
 }
 
-export function LeaderboardTable({ rows, groupId }: LeaderboardTableProps) {
+export function LeaderboardTable({ rows, groupId, placeholderIds }: LeaderboardTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -58,6 +60,11 @@ export function LeaderboardTable({ rows, groupId }: LeaderboardTableProps) {
                     <AvatarFallback className="text-xs">{initials}</AvatarFallback>
                   </Avatar>
                   {row.display_name ?? "Unknown"}
+                  {placeholderIds?.has(row.user_id) && (
+                    <Badge variant="outline" className="text-xs text-muted-foreground">
+                      Unclaimed
+                    </Badge>
+                  )}
                 </Link>
               </TableCell>
               <TableCell

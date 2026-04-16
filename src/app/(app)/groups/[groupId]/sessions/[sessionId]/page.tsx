@@ -36,7 +36,7 @@ export default async function SessionDetailPage({
   // Fetch entries with player profiles
   const { data: entries } = await supabase
     .from("entries")
-    .select("*, profiles(display_name, avatar_url)")
+    .select("*, profiles(display_name, avatar_url, is_placeholder)")
     .eq("session_id", sessionId);
 
   const entriesWithProfiles =
@@ -46,6 +46,7 @@ export default async function SessionDetailPage({
       displayName:
         (e.profiles as unknown as { display_name: string | null })?.display_name ?? "Unknown",
       avatarUrl: (e.profiles as unknown as { avatar_url: string | null })?.avatar_url,
+      isPlaceholder: (e.profiles as unknown as { is_placeholder: boolean })?.is_placeholder ?? false,
       totalBuyIn: Number(e.total_buy_in),
       cashOut: Number(e.cash_out),
       net: Number(e.net),

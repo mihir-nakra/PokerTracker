@@ -14,18 +14,24 @@ export interface Database {
           id: string;
           display_name: string | null;
           avatar_url: string | null;
+          is_placeholder: boolean;
+          created_by_group_id: string | null;
           created_at: string;
         };
         Insert: {
           id: string;
           display_name?: string | null;
           avatar_url?: string | null;
+          is_placeholder?: boolean;
+          created_by_group_id?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           display_name?: string | null;
           avatar_url?: string | null;
+          is_placeholder?: boolean;
+          created_by_group_id?: string | null;
           created_at?: string;
         };
       };

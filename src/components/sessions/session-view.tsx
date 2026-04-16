@@ -14,6 +14,7 @@ interface EntryData {
   userId: string;
   displayName: string;
   avatarUrl: string | null;
+  isPlaceholder: boolean;
   totalBuyIn: number;
   cashOut: number;
   net: number;
@@ -132,19 +133,20 @@ export function SessionView({
 
       {/* Actions */}
       {isAdminOrOwner && (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {!isFinalized && (
-            <Button onClick={handleFinalize} disabled={loading}>
+            <Button className="min-h-11 sm:min-h-9" onClick={handleFinalize} disabled={loading}>
               {loading ? "..." : "Finalize Session"}
             </Button>
           )}
           {isFinalized && (
-            <Button variant="outline" onClick={handleReopen} disabled={loading}>
+            <Button className="min-h-11 sm:min-h-9" variant="outline" onClick={handleReopen} disabled={loading}>
               {loading ? "..." : "Reopen Session"}
             </Button>
           )}
           {session.status === "draft" && (
             <Button
+              className="min-h-11 sm:min-h-9"
               variant="destructive"
               onClick={handleDelete}
               disabled={loading}

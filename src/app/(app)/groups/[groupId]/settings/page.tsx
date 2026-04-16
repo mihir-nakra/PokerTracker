@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { MemberList } from "@/components/groups/member-list";
 import { InviteLinkDisplay } from "@/components/groups/invite-link-display";
+import { AddPlayerForm } from "@/components/groups/add-player-form";
+import { DeleteGroupButton } from "@/components/groups/delete-group-button";
 
 export default async function GroupSettingsPage({
   params,
@@ -34,7 +36,7 @@ export default async function GroupSettingsPage({
 
   const { data: memberships } = await supabase
     .from("memberships")
-    .select("id, user_id, role, profiles(id, display_name, avatar_url)")
+    .select("id, user_id, role, profiles(id, display_name, avatar_url, is_placeholder)")
     .eq("group_id", groupId);
 
   const members =
@@ -43,6 +45,7 @@ export default async function GroupSettingsPage({
       role: m.role,
       displayName: (m.profiles as unknown as { display_name: string | null })?.display_name ?? "Unknown",
       avatarUrl: (m.profiles as unknown as { avatar_url: string | null })?.avatar_url,
+      isPlaceholder: (m.profiles as unknown as { is_placeholder: boolean })?.is_placeholder ?? false,
     })) ?? [];
 
   const isAdminOrOwner =
@@ -70,6 +73,23 @@ export default async function GroupSettingsPage({
           currentUserRole={currentMembership.role}
         />
       </section>
+
+      {isAdminOrOwner && (
+        <section>
+          <h2 className="text-lg font-semibold mb-4">Add Player</h2>
+          <AddPlayerForm groupId={groupId} />
+        </section>
+      )}
+
+      {currentMembership.role === "owner" && (
+        <section className="border-t border-destructive/20 pt-8">
+          <h2 className="text-lg font-semibold text-destructive mb-2">Danger Zone</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Permanently delete this group and all its sessions, entries, and member data.
+          </p>
+          <DeleteGroupButton groupId={groupId} />
+        </section>
+      )}
     </div>
   );
 }

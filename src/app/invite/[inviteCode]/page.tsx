@@ -67,10 +67,22 @@ export default async function InvitePage({
     redirect(`/groups/${group.id}`);
   }
 
+  // Check if there are unclaimed placeholders
+  const { data: placeholders } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("is_placeholder", true)
+    .eq("created_by_group_id", group.id);
+
+  const hasPlaceholders = placeholders && placeholders.length > 0;
+
   // Show join prompt
   async function handleJoin() {
     "use server";
     await joinGroup(inviteCode);
+    if (hasPlaceholders) {
+      redirect(`/invite/${inviteCode}/claim`);
+    }
   }
 
   return (

@@ -13,6 +13,7 @@ export async function createGroup(formData: FormData) {
   if (!user) return { error: "Not authenticated" };
 
   const name = formData.get("name") as string;
+  const playerNames = formData.getAll("playerNames") as string[];
 
   const { data: group, error } = await supabase
     .from("groups")
@@ -26,6 +27,24 @@ export async function createGroup(formData: FormData) {
   await supabase
     .from("memberships")
     .insert({ user_id: user.id, group_id: group.id, role: "owner" });
+
+  // Create placeholder players
+  for (const playerName of playerNames) {
+    const trimmed = playerName.trim();
+    if (!trimmed) continue;
+    const placeholderId = crypto.randomUUID();
+    await supabase.from("profiles").insert({
+      id: placeholderId,
+      display_name: trimmed,
+      is_placeholder: true,
+      created_by_group_id: group.id,
+    });
+    await supabase.from("memberships").insert({
+      user_id: placeholderId,
+      group_id: group.id,
+      role: "member",
+    });
+  }
 
   redirect(`/groups/${group.id}`);
 }
