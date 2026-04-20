@@ -80,22 +80,22 @@ export default async function InvitePage({
     .select("id", { count: "exact", head: true })
     .eq("group_id", group.id);
 
-  // Check for unclaimed placeholders
-  const { data: placeholders } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("is_placeholder", true)
-    .eq("created_by_group_id", group.id);
-
-  const hasPlaceholders = placeholders && placeholders.length > 0;
-
   const groupId = group.id;
 
   async function handleJoin() {
     "use server";
     const result = await joinGroup(inviteCode);
     if (result?.error) return;
-    if (hasPlaceholders) {
+
+    // Check for unclaimed placeholders AFTER joining (RLS may require membership)
+    const supabaseAction = await createClient();
+    const { data: placeholders } = await supabaseAction
+      .from("profiles")
+      .select("id")
+      .eq("is_placeholder", true)
+      .eq("created_by_group_id", groupId);
+
+    if (placeholders && placeholders.length > 0) {
       redirect(`/invite/${inviteCode}/claim`);
     } else {
       redirect(`/groups/${groupId}`);
