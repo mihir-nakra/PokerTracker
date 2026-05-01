@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,20 +37,29 @@ export function MemberList({
   currentUserRole,
 }: MemberListProps) {
   const canManage = currentUserRole === "owner" || currentUserRole === "admin";
+  const [loadingMembers, setLoadingMembers] = useState<Record<string, boolean>>({});
+
+  function setMemberLoading(userId: string, loading: boolean) {
+    setLoadingMembers((prev) => ({ ...prev, [userId]: loading }));
+  }
 
   async function handleRoleChange(userId: string, newRole: string) {
+    setMemberLoading(userId, true);
     const result = await updateMemberRole(groupId, userId, newRole);
     if (result?.error) {
       toast.error(result.error);
     } else {
       toast.success("Role updated");
     }
+    setMemberLoading(userId, false);
   }
 
   async function handleRemove(userId: string) {
+    setMemberLoading(userId, true);
     const result = await removeMember(groupId, userId);
     if (result?.error) {
       toast.error(result.error);
+      setMemberLoading(userId, false);
     } else {
       toast.success("Member removed");
     }
@@ -57,9 +67,11 @@ export function MemberList({
 
   async function handleDeletePlaceholder(userId: string) {
     if (!confirm("Delete this placeholder player? This will remove all their session data.")) return;
+    setMemberLoading(userId, true);
     const result = await deletePlaceholderPlayer(userId, groupId);
     if (result?.error) {
       toast.error(result.error);
+      setMemberLoading(userId, false);
     } else {
       toast.success("Player removed");
     }
@@ -77,6 +89,7 @@ export function MemberList({
 
         const isSelf = member.userId === currentUserId;
         const isOwner = member.role === "owner";
+        const isMemberLoading = !!loadingMembers[member.userId];
 
         return (
           <div
@@ -108,14 +121,16 @@ export function MemberList({
                       variant="ghost"
                       size="sm"
                       className="text-destructive"
+                      disabled={isMemberLoading}
                       onClick={() => handleDeletePlaceholder(member.userId)}
                     >
-                      Delete
+                      {isMemberLoading ? "Deleting..." : "Delete"}
                     </Button>
                   ) : (
                     <>
                       <Select
                         defaultValue={member.role}
+                        disabled={isMemberLoading}
                         onValueChange={(v) => v && handleRoleChange(member.userId, String(v))}
                       >
                         <SelectTrigger className="w-28">
@@ -130,9 +145,10 @@ export function MemberList({
                         variant="ghost"
                         size="sm"
                         className="text-destructive"
+                        disabled={isMemberLoading}
                         onClick={() => handleRemove(member.userId)}
                       >
-                        Remove
+                        {isMemberLoading ? "Removing..." : "Remove"}
                       </Button>
                     </>
                   )}

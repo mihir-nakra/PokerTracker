@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { joinGroup } from "@/lib/actions/groups";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import {
   Card,
   CardContent,
@@ -136,9 +137,9 @@ export default async function InvitePage({
             </div>
           </div>
           <form action={handleJoin}>
-            <Button type="submit" size="lg" className="w-full">
+            <SubmitButton size="lg" className="w-full" pendingText="Joining...">
               Join Group
-            </Button>
+            </SubmitButton>
           </form>
         </CardContent>
       </Card>

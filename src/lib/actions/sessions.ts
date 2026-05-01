@@ -72,6 +72,56 @@ export async function updateSessionStatus(
   return { success: true };
 }
 
+export async function addPlayerToSession(
+  sessionId: string,
+  userId: string,
+  groupId: string
+) {
+  const supabase = await createClient();
+
+  const { error: spError } = await supabase
+    .from("session_players")
+    .insert({ session_id: sessionId, user_id: userId });
+
+  if (spError) return { error: spError.message };
+
+  const { error: entryError } = await supabase
+    .from("entries")
+    .insert({ session_id: sessionId, user_id: userId, total_buy_in: 0, cash_out: 0 });
+
+  if (entryError) return { error: entryError.message };
+
+  revalidatePath(`/groups/${groupId}/sessions/${sessionId}`);
+  return { success: true };
+}
+
+export async function removePlayerFromSession(
+  sessionId: string,
+  userId: string,
+  groupId: string
+) {
+  const supabase = await createClient();
+
+  const { error: entryError } = await supabase
+    .from("entries")
+    .delete()
+    .eq("session_id", sessionId)
+    .eq("user_id", userId);
+
+  if (entryError) return { error: entryError.message };
+
+  const { error: spError } = await supabase
+    .from("session_players")
+    .delete()
+    .eq("session_id", sessionId)
+    .eq("user_id", userId);
+
+  if (spError) return { error: spError.message };
+
+  revalidatePath(`/groups/${groupId}/sessions/${sessionId}`);
+  return { success: true };
+}
+
 export async function deleteSession(sessionId: string, groupId: string) {
   const supabase = await createClient();
 

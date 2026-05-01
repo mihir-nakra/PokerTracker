@@ -4,12 +4,23 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { EntryRow } from "./entry-row";
 import { SessionStatusBadge } from "./session-status-badge";
-import { updateSessionStatus, deleteSession } from "@/lib/actions/sessions";
+import { updateSessionStatus, deleteSession, addPlayerToSession, removePlayerFromSession } from "@/lib/actions/sessions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Calendar, CheckCircle, AlertCircle, Lock, Unlock, Trash2, Users, TrendingUp } from "lucide-react";
+import { Calendar, CheckCircle, AlertCircle, Lock, Unlock, Trash2, Users, TrendingUp, Pencil, Plus, X } from "lucide-react";
 
 interface EntryData {
   id: string;
@@ -20,6 +31,12 @@ interface EntryData {
   totalBuyIn: number;
   cashOut: number;
   net: number;
+}
+
+interface GroupMember {
+  id: string;
+  displayName: string;
+  isPlaceholder: boolean;
 }
 
 interface SessionViewProps {
@@ -34,6 +51,7 @@ interface SessionViewProps {
   groupId: string;
   currentUserId: string;
   isAdminOrOwner: boolean;
+  groupMembers: GroupMember[];
 }
 
 export function SessionView({
@@ -42,10 +60,13 @@ export function SessionView({
   groupId,
   currentUserId,
   isAdminOrOwner,
+  groupMembers,
 }: SessionViewProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [editingPlayers, setEditingPlayers] = useState<string | null>(null);
   const isFinalized = session.status === "finalized";
+  const canEditPlayers = isAdminOrOwner && !isFinalized;
 
   const totalBuyIns = entries.reduce((sum, e) => sum + e.totalBuyIn, 0);
   const totalCashOuts = entries.reduce((sum, e) => sum + e.cashOut, 0);
@@ -95,6 +116,33 @@ export function SessionView({
     }
   }
 
+  const currentPlayerIds = new Set(entries.map((e) => e.userId));
+  const availableToAdd = groupMembers.filter((m) => !currentPlayerIds.has(m.id));
+
+  async function handleAddPlayer(userId: string) {
+    setEditingPlayers(userId);
+    const result = await addPlayerToSession(session.id, userId, groupId);
+    if (result?.error) {
+      toast.error(result.error);
+    } else {
+      toast.success("Player added");
+      router.refresh();
+    }
+    setEditingPlayers(null);
+  }
+
+  async function handleRemovePlayer(userId: string) {
+    setEditingPlayers(userId);
+    const result = await removePlayerFromSession(session.id, userId, groupId);
+    if (result?.error) {
+      toast.error(result.error);
+    } else {
+      toast.success("Player removed");
+      router.refresh();
+    }
+    setEditingPlayers(null);
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -130,15 +178,101 @@ export function SessionView({
               <Users className="h-4 w-4 text-primary" />
               Player Ledger
             </h2>
+            {canEditPlayers && (
+              <Dialog>
+                <DialogTrigger
+                  render={
+                    <Button variant="outline" size="sm" className="gap-1.5" />
+                  }
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit Players
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Edit Players</DialogTitle>
+                    <DialogDescription>
+                      Add or remove players from this session.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 max-h-80 overflow-y-auto">
+                    {entries.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          In Session
+                        </p>
+                        {entries.map((entry) => (
+                          <div
+                            key={entry.userId}
+                            className="flex items-center justify-between rounded-md border p-3"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-sm">{entry.displayName}</span>
+                              {entry.isPlaceholder && (
+                                <Badge variant="outline" className="text-xs text-muted-foreground">
+                                  Unclaimed
+                                </Badge>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-destructive"
+                              disabled={editingPlayers === entry.userId}
+                              onClick={() => handleRemovePlayer(entry.userId)}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {availableToAdd.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Add to Session
+                        </p>
+                        {availableToAdd.map((member) => (
+                          <div
+                            key={member.id}
+                            className="flex items-center justify-between rounded-md border p-3"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-sm">{member.displayName}</span>
+                              {member.isPlaceholder && (
+                                <Badge variant="outline" className="text-xs text-muted-foreground">
+                                  Unclaimed
+                                </Badge>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-primary"
+                              disabled={editingPlayers === member.id}
+                              onClick={() => handleAddPlayer(member.id)}
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <DialogFooter showCloseButton />
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
 
           <Card>
             <CardContent className="p-0">
-              <div className="hidden sm:grid grid-cols-[1fr_120px_120px_100px] gap-2 px-4 py-3 border-b bg-muted/30 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <div className="hidden sm:grid grid-cols-[1fr_120px_120px_100px_auto] gap-2 px-4 py-3 border-b bg-muted/30 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 <div>Player</div>
                 <div className="text-right">Buy-in ($)</div>
                 <div className="text-right">Cash-out ($)</div>
                 <div className="text-right">Net Result</div>
+                <div />
               </div>
               {entries.map((entry) => (
                 <EntryRow
@@ -153,7 +287,7 @@ export function SessionView({
                 />
               ))}
               {/* Totals row - desktop */}
-              <div className="hidden sm:grid grid-cols-[1fr_120px_120px_100px] gap-2 px-4 py-3 border-t bg-muted/30 text-sm font-semibold">
+              <div className="hidden sm:grid grid-cols-[1fr_120px_120px_100px_auto] gap-2 px-4 py-3 border-t bg-muted/30 text-sm font-semibold">
                 <div className="text-muted-foreground">Totals</div>
                 <div className="text-right tabular-nums">${totalBuyIns.toFixed(2)}</div>
                 <div className="text-right tabular-nums">${totalCashOuts.toFixed(2)}</div>
@@ -163,6 +297,7 @@ export function SessionView({
                 )}>
                   {isBalanced ? "Balanced" : `$${Math.abs(difference).toFixed(2)}`}
                 </div>
+                <div />
               </div>
               {/* Totals row - mobile */}
               <div className="sm:hidden px-4 py-3 border-t bg-muted/30 text-sm font-semibold space-y-1">
@@ -279,8 +414,7 @@ export function SessionView({
                   {isFinalized && (
                     <Button
                       size="sm"
-                      variant="outline"
-                      className="flex-1 gap-1.5 border-emerald-700 text-emerald-100 hover:bg-emerald-900"
+                      className="flex-1 gap-1.5 bg-white text-emerald-900 hover:bg-emerald-50 dark:bg-emerald-100 dark:hover:bg-emerald-200"
                       onClick={handleReopen}
                       disabled={loading}
                     >

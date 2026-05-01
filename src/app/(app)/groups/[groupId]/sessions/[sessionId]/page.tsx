@@ -54,6 +54,21 @@ export default async function SessionDetailPage({
 
   const isAdminOrOwner = membership.role === "owner" || membership.role === "admin";
 
+  // Fetch all group members for editing players
+  const { data: memberships } = await supabase
+    .from("memberships")
+    .select("user_id, profiles(display_name, is_placeholder)")
+    .eq("group_id", groupId);
+
+  const groupMembers =
+    memberships?.map((m) => ({
+      id: m.user_id,
+      displayName:
+        (m.profiles as unknown as { display_name: string | null })?.display_name ?? "Unknown",
+      isPlaceholder:
+        (m.profiles as unknown as { is_placeholder: boolean })?.is_placeholder ?? false,
+    })) ?? [];
+
   return (
     <SessionView
       session={session}
@@ -61,6 +76,7 @@ export default async function SessionDetailPage({
       groupId={groupId}
       currentUserId={user!.id}
       isAdminOrOwner={isAdminOrOwner}
+      groupMembers={groupMembers}
     />
   );
 }

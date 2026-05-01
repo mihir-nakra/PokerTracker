@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { signOut } from "@/lib/actions/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -16,6 +17,7 @@ interface UserNavProps {
 }
 
 export function UserNav({ profile }: UserNavProps) {
+  const [signingOut, setSigningOut] = useState(false);
   const initials = profile?.display_name
     ?.split(" ")
     .map((n) => n[0])
@@ -42,12 +44,15 @@ export function UserNav({ profile }: UserNavProps) {
           Profile
         </DropdownMenuItem>
         <DropdownMenuItem
+          disabled={signingOut}
           onClick={async () => {
+            setSigningOut(true);
             await signOut();
+            setSigningOut(false);
           }}
         >
           <LogOut className="h-4 w-4 mr-2" />
-          Sign out
+          {signingOut ? "Signing out..." : "Sign out"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

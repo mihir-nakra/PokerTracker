@@ -75,7 +75,7 @@ export default async function GroupPage({
   // Fetch entries for winnings-over-time chart (all players, finalized sessions only)
   const { data: allEntries } = await supabase
     .from("entries")
-    .select("user_id, net, sessions(date, status)")
+    .select("user_id, net, total_buy_in, cash_out, session_id, sessions(date, status)")
     .eq("sessions.group_id", groupId)
     .order("created_at", { ascending: true });
 
@@ -86,6 +86,52 @@ export default async function GroupPage({
     if (session?.status !== "finalized") continue;
     if (!playerMap.has(entry.user_id)) playerMap.set(entry.user_id, []);
     playerMap.get(entry.user_id)!.push({ date: session.date, net: Number(entry.net) });
+  }
+
+  // Compute group-level stats from finalized session entries
+  const finalizedSessions = sessions?.filter((s) => s.status === "finalized") ?? [];
+  const finalizedSessionIds = new Set(finalizedSessions.map((s) => s.id));
+
+  const finalizedEntries = (allEntries ?? []).filter((entry) => {
+    const session = entry.sessions as unknown as { date: string; status: string } | null;
+    return session?.status === "finalized";
+  });
+
+  const totalBuyIn = finalizedEntries.reduce((sum, e) => sum + Number(e.total_buy_in ?? 0), 0);
+  const totalCashOut = finalizedEntries.reduce((sum, e) => sum + Number(e.cash_out ?? 0), 0);
+  const uniquePlayerIds = new Set(finalizedEntries.map((e) => e.user_id));
+  const sessionCount = finalizedSessionIds.size;
+  const playerCount = uniquePlayerIds.size;
+
+  const groupStats = {
+    totalSessions: sessionCount,
+    totalPlayers: playerCount,
+    totalBuyIn: Math.round(totalBuyIn * 100) / 100,
+    totalCashOut: Math.round(totalCashOut * 100) / 100,
+    totalEntries: finalizedEntries.length,
+    avgBuyInPerSession: sessionCount > 0 ? Math.round((totalBuyIn / sessionCount) * 100) / 100 : 0,
+    avgBuyInPerPlayer: playerCount > 0 ? Math.round((totalBuyIn / playerCount) * 100) / 100 : 0,
+    avgPlayersPerSession: sessionCount > 0 ? Math.round((finalizedEntries.length / sessionCount) * 10) / 10 : 0,
+    avgBuyInPerEntry: finalizedEntries.length > 0 ? Math.round((totalBuyIn / finalizedEntries.length) * 100) / 100 : 0,
+    biggestPot: 0 as number,
+    biggestPotDate: "" as string,
+  };
+
+  // Find biggest pot (highest total buy-in in a single session)
+  const potBySession = new Map<string, { total: number; date: string }>();
+  for (const entry of finalizedEntries) {
+    const session = entry.sessions as unknown as { date: string; status: string } | null;
+    const sid = entry.session_id;
+    if (!potBySession.has(sid)) {
+      potBySession.set(sid, { total: 0, date: session?.date ?? "" });
+    }
+    potBySession.get(sid)!.total += Number(entry.total_buy_in ?? 0);
+  }
+  for (const [, val] of potBySession) {
+    if (val.total > groupStats.biggestPot) {
+      groupStats.biggestPot = Math.round(val.total * 100) / 100;
+      groupStats.biggestPotDate = val.date;
+    }
   }
 
   const chartPlayers = Array.from(playerMap.entries()).map(([userId, entries]) => {
@@ -138,6 +184,7 @@ export default async function GroupPage({
           placeholderIds={placeholderIds}
           chartPlayers={chartPlayers}
           currentUserId={user!.id}
+          groupStats={groupStats}
         />
       </section>
 
